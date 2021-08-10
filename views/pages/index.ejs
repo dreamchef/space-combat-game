@@ -12,27 +12,125 @@
 <script src="libraries/babylon.objFileLoader.js"></script>
 <canvas id="render-canvas"></canvas>
 <script>
+    
+    //////////////////////////////////
+    //        CREATES SCENE         //
+    //////////////////////////////////
+    
     var canvas = document.getElementById("render-canvas");
     var engine = new BABYLON.Engine(canvas);
     var scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.8, 0.8, 0.8);
+    
+
+    //////////////////////////////////
+    //       CREATES LIGHTING       //
+    //////////////////////////////////
+
+    var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10, 10, 0), scene);
+
+
+    //////////////////////////////////
+    //        CREATES SKYBOX        //
+    //////////////////////////////////
+
+    
+    var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000.0}, scene);
+    var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("assets/textures/skybox/darkred", scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
+
+
+    //////////////////////////////////
+    //      PLACES STATIC MESHES    //
+    //////////////////////////////////
+
+    var box = BABYLON.Mesh.CreateBox("box", 2, scene);
+    box.rotation.x = -0.2;
+    box.rotation.y = -0.4;
+    var boxMaterial = new BABYLON.StandardMaterial("material", scene);
+    boxMaterial.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
+    box.material = boxMaterial;
+
+
+    //////////////////////////////////
+    //      BEGINS RENDERING        //
+    //////////////////////////////////
+
+    var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -10), scene);
+
     var renderLoop = function () {
         scene.render();
     };
     engine.runRenderLoop(renderLoop);
-    var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -10), scene);
-    var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10, 10, 0), scene);
-    
-    // var box = BABYLON.Mesh.CreateBox("box", 2, scene);
-    // box.rotation.x = -0.2;
-    // box.rotation.y = -0.4;
-    // var boxMaterial = new BABYLON.StandardMaterial("material", scene);
-    // boxMaterial.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
-    // box.material = boxMaterial;
 
-    BABYLON.SceneLoader.ImportMesh("bee", "./assets/mesh/", "bee.obj", scene, function(object) {
-        object.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
-});
+
+    //////////////////////////////////
+    //      FIRST-PERSON CAMERA     //
+    //////////////////////////////////
+
+    function toggleCam(key) {
+        if(key.code == 'KeyT') {
+            mouseControl = !mouseControl;
+        }
+        else if(key.code == 'Escape') {
+            mouseControl = false;
+        }
+    }
+
+    function orientCam(event) {
+        if(mouseControl) {
+            scene.activeCamera.rotation.x = -(event.clientY-(canvas.height/2))/1000;
+            scene.activeCamera.rotation.y = -(event.clientX-(canvas.width/2))/1000;
+        }
+    }
+
+    let mouseControl = false;
+    document.addEventListener('keyup', toggleCam);
+    document.addEventListener('mousemove', orientCam);
+
+
+    //////////////////////////////////
+    //         WSAD MOVEMENT        //
+    //////////////////////////////////
+
+    function movePlayer(key) {
+        console.log('moving player...');
+        console.log(key.code);
+        if(key.code == 'KeyD') {
+            console.log('right');
+            scene.activeCamera.position.x++;
+        }
+        else if(key.code == 'KeyA') {
+            console.log('moving player...');
+            scene.activeCamera.position.x--;
+        }
+        else if(key.code == 'KeyW') {
+            console.log('moving player...');
+            scene.activeCamera.position.z++;
+        }
+        else if(key.code == 'KeyS') {
+            scene.activeCamera.position.z--;
+        }
+    }
+
+    document.addEventListener('keydown', movePlayer);    
+
+
+    // Main Loop
+    // while(1) {
+    //     if(mouseControl == true) {
+    //         camera.cameraDirection = BABYLON.Vector3(1,1,0);
+            
+    //     }
+    //     console.log('loop');
+    // }
+    
+
 
 </script>
 </body>
