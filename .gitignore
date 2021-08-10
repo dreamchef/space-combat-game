@@ -72,3 +72,15 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# Suspend Unreal development
+'LEGACY Unreal Engine 4'/*
+
+# NodeJS Modules
+node_modules/*
+
+# BabylonJS
+libraries/*
+
+# Assets
+assets/*
