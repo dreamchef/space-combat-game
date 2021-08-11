@@ -12,29 +12,35 @@
 <script src="libraries/babylon.objFileLoader.js"></script>
 <canvas id="render-canvas"></canvas>
 <script>
-    
+
     //////////////////////////////////
-    //        CREATES SCENE         //
+    //     GAME CONFIG VARIABLES    //
+    //////////////////////////////////
+
+    let numPieces = 5;
+    let boardRadius = 15;
+    let pieceSize = 1;
+
+
+    //////////////////////////////////
+    //     GAME-STATE VARIABLES     //
+    //////////////////////////////////
+
+    let groupSelect = false;
+    let mouseControl = false;
+
+
+    //////////////////////////////////
+    //  SCENE, SKYBOX, & LIGHTING   //
     //////////////////////////////////
     
     var canvas = document.getElementById("render-canvas");
     var engine = new BABYLON.Engine(canvas);
     var scene = new BABYLON.Scene(engine);
     scene.clearColor = new BABYLON.Color3(0.8, 0.8, 0.8);
-    
-
-    //////////////////////////////////
-    //       CREATES LIGHTING       //
-    //////////////////////////////////
 
     var light = new BABYLON.PointLight("light", new BABYLON.Vector3(10, 10, 0), scene);
 
-
-    //////////////////////////////////
-    //        CREATES SKYBOX        //
-    //////////////////////////////////
-
-    
     var skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000.0}, scene);
     var skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
     skyboxMaterial.backFaceCulling = false;
@@ -46,90 +52,146 @@
 
 
     //////////////////////////////////
-    //      PLACES STATIC MESHES    //
+    //  MODEL MATERIALS & TEXTURES  //
     //////////////////////////////////
 
-    var box = BABYLON.Mesh.CreateBox("box", 2, scene);
-    box.rotation.x = -0.2;
-    box.rotation.y = -0.4;
-    var boxMaterial = new BABYLON.StandardMaterial("material", scene);
-    boxMaterial.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
-    box.material = boxMaterial;
+    var playerPieceMat = new BABYLON.StandardMaterial("playerPieceMat", scene);
+    playerPieceMat.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
 
-
-    //////////////////////////////////
-    //      BEGINS RENDERING        //
-    //////////////////////////////////
-
-    var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -10), scene);
-
-    var renderLoop = function () {
-        scene.render();
-    };
-    engine.runRenderLoop(renderLoop);
+    var AIPieceMat = new BABYLON.StandardMaterial("AIPieceMat", scene);
+    AIPieceMat.emissiveColor = new BABYLON.Color3(0.86, 0.3, 0);
 
 
     //////////////////////////////////
     //      FIRST-PERSON CAMERA     //
     //////////////////////////////////
 
-    function toggleCam(key) {
-        if(key.code == 'KeyT') {
+    var camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -boardRadius), scene);
+
+
+    //////////////////////////////////
+    //     GAMEPIECE SPAWNING       //
+    //////////////////////////////////
+
+    // Player pieces
+    let playerPieces = [];
+    for(let i = 0; i < numPieces; i++) {
+        playerPieces.push(BABYLON.Mesh.CreateBox("playerPiece", pieceSize, scene));
+        playerPieces[i].material = playerPieceMat;
+        playerPieces[i].position.y = -2;
+        playerPieces[i].position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
+        playerPieces[i].position.z = -boardRadius/2; // Interpolate board size by number of pieces
+        playerPieces[i].isPickable;
+        playerPieces[i].edgesWidth = 4;
+        playerPieces[i].edgesColor = new BABYLON.Color4(1, 1, 1, 1);
+    }
+
+    // AI pieces
+    let AIPieces = [];
+    for(let i = 0; i < numPieces; i++) {
+        AIPieces.push(BABYLON.Mesh.CreateBox("AIPiece", pieceSize, scene));
+        AIPieces[i].material = AIPieceMat;
+        AIPieces[i].position.y = -2;
+        AIPieces[i].position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
+        AIPieces[i].position.z = boardRadius/2; // Interpolate board size by number of pieces
+    }
+
+
+    //////////////////////////////////
+    //  PLAYER-CONTROLLED EVENTS    //
+    //////////////////////////////////
+
+    function keyDown(key) {
+        // Group-select while shift held down
+        if(key.code == 'ShiftLeft') {
+            groupSelect = true;
+            console.log('group select');
+        }
+        // WSAD movement
+        // else if(key.code == 'KeyD') {
+        //     console.log('right');
+        //     scene.activeCamera.position.x++;
+        // }
+        // else if(key.code == 'KeyA') {
+        //     console.log('moving player...');
+        //     scene.activeCamera.position.x--;
+        // }
+        // else if(key.code == 'KeyW') {
+        //     console.log('moving player...');
+        //     scene.activeCamera.position.z++;
+        // }
+        // else if(key.code == 'KeyS') {
+        //     scene.activeCamera.position.z--;
+        // }
+    }
+
+    function keyUp(key) {
+        // Individual-select while shift up
+        if(key.code == 'ShiftLeft') {
+            groupSelect = false;
+            console.log('single select');
+        }
+        // Toggle mouse camera control
+        else if(key.code == 'KeyT') {
             mouseControl = !mouseControl;
         }
+        // Exit mouse camera
         else if(key.code == 'Escape') {
             mouseControl = false;
+        }
+        // Move selected gamepieces
+        else if(key.code == 'KeyE') {
+            // TODO
         }
     }
 
     function orientCam(event) {
+        // Set look direction based on cursor position
         if(mouseControl) {
-            scene.activeCamera.rotation.x = -(event.clientY-(canvas.height/2))/1000;
-            scene.activeCamera.rotation.y = -(event.clientX-(canvas.width/2))/1000;
+            scene.activeCamera.rotation.y = (event.offsetX/canvas.width)*6 - 3;
+            scene.activeCamera.rotation.x = (event.offsetY/canvas.height)*2 - 1;
         }
     }
 
-    let mouseControl = false;
-    document.addEventListener('keyup', toggleCam);
+    // Start all listeners
+    document.addEventListener('keydown', keyDown);
+    document.addEventListener('keyup', keyUp);
     document.addEventListener('mousemove', orientCam);
 
+    // Select gamepieces with left mouse-click
+    scene.onPointerDown = function (evt, pickResult) {
+        if (pickResult.hit) {
+            if( !groupSelect || pickResult.pickedMesh.name != 'playerPiece') {
+                for(let i = 0; i < numPieces; i++) {
+                        playerPieces[i].state = 'selected';
+                        playerPieces[i].enableEdgesRendering(0);
+                }
+            }
+            if(pickResult.pickedMesh.name == 'playerPiece') {
+                pickResult.pickedMesh.state = 'deselected';
+                pickResult.pickedMesh.enableEdgesRendering();
+            }
+        }
+    };
+
 
     //////////////////////////////////
-    //         WSAD MOVEMENT        //
+    //           RENDER LOOP        //
     //////////////////////////////////
-
-    function movePlayer(key) {
-        console.log('moving player...');
-        console.log(key.code);
-        if(key.code == 'KeyD') {
-            console.log('right');
-            scene.activeCamera.position.x++;
-        }
-        else if(key.code == 'KeyA') {
-            console.log('moving player...');
-            scene.activeCamera.position.x--;
-        }
-        else if(key.code == 'KeyW') {
-            console.log('moving player...');
-            scene.activeCamera.position.z++;
-        }
-        else if(key.code == 'KeyS') {
-            scene.activeCamera.position.z--;
-        }
-    }
-
-    document.addEventListener('keydown', movePlayer);    
-
-
-    // Main Loop
-    // while(1) {
-    //     if(mouseControl == true) {
-    //         camera.cameraDirection = BABYLON.Vector3(1,1,0);
-            
-    //     }
-    //     console.log('loop');
-    // }
     
+    var renderLoop = function () {
+        scene.render();
+    };
+    engine.runRenderLoop(renderLoop);
+
+
+    
+
+    
+    
+
+
+ 
 
 
 </script>
