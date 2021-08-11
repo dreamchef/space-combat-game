@@ -83,6 +83,8 @@
     // Player pieces
     let playerPieces = [];
     for(let i = 0; i < numPieces; i++) {
+
+        // Mesh location, size, and appearance
         let piece = BABYLON.Mesh.CreateBox('playerPiece', pieceSize, scene);
         piece.material = playerPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
@@ -90,6 +92,14 @@
         piece.isPickable = true;
         piece.edgesWidth = 4;
         piece.edgesColor = new BABYLON.Color4(1, 1, 1, 1);
+
+        // Gamepiece state variables
+        piece.metadata = {
+            health: 1,
+            moving: false,
+            target: null,
+            selected: false
+        }
 
         playerPieces.push(piece);
         console.log('   player gamepiece instance material: ' + piece.material.emissiveColor);
@@ -102,6 +112,13 @@
         piece.material = AIPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
         piece.position.z = boardRadius/2; // Interpolate board size by number of pieces
+
+        // Gamepiece state variables
+        piece.metadata = {
+            health: 1,
+            moving: false,
+            target: null
+        }
 
         AIPieces.push(piece);
         console.log('   AI gamepiece instance pos: ' + AIPieces[i].position);
@@ -169,17 +186,27 @@
         else if(key.code == 'Escape') {
             mouseControl = false;
         }
-        // Update move targets of selected gamepieces
+        // Set move targets of selected gamepieces
         else if(key.code == 'KeyE') {
-            let moveTarget = scene.pick(scene.pointerX, scene.pointerY);
-            if (moveTarget.pickedMesh.name == 'board') {
-                // TODO: move selected pieces to target
-                for(let i = 0; i < numPieces; i++) {
-                    //playerPieces
+            let mainRay = scene.pick(scene.pointerX, scene.pointerY);
+            // let boardRay = scene.createPickingRay(scene.pointerX, scene.pointerY);
+            // let boardIntersection = ray.intersectsMesh(board);
+            if(mainRay.hit) {
+                if(mainRay.pickedMesh.name == 'AIPiece') {
+                    // TODO: attack pickedMesh piece
                 }
-            }
-            else if (moveTarget.pickedMesh.name == 'AIPiece') {
-                // TODO: attack
+                else {
+                    let boardRay = scene.createPickingRay(scene.pointerX, scene.pointerY);
+                    let boardIntersection = boardRay.intersectsMesh(board);
+                    if(boardIntersection.hit) {
+                        for(let i = 0; i < numPieces; i++) {
+                            if (playerPieces[i].metadata.selected = true) {
+                                playerPieces[i].metadata.moving = true;
+                                playerPieces[i].metadata.target = boardIntersection.pickedPoint;
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -203,12 +230,12 @@
         if (pickResult.hit) {
             if( !groupSelect || pickResult.pickedMesh.name != 'playerPiece') {
                 for(let i = 0; i < numPieces; i++) {
-                        playerPieces[i].state = 'selected';
+                        playerPieces[i].metadata.selected = true;
                         playerPieces[i].enableEdgesRendering(0);
                 }
             }
             if(pickResult.pickedMesh.name == 'playerPiece') {
-                pickResult.pickedMesh.state = 'deselected';
+                pickResult.pickedMesh.metadata.selected = false;
                 pickResult.pickedMesh.enableEdgesRendering();
             }
         }
