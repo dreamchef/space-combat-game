@@ -83,7 +83,7 @@
     // Player pieces
     let playerPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        let piece = BABYLON.Mesh.CreateBox('mesh', pieceSize, scene);
+        let piece = BABYLON.Mesh.CreateBox('playerPiece', pieceSize, scene);
         piece.material = playerPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
         piece.position.z = -boardRadius/2; // Interpolate board size by number of pieces
@@ -98,7 +98,7 @@
     // AI pieces
     let AIPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        let piece = BABYLON.Mesh.CreateBox('mesh', pieceSize, scene);
+        let piece = BABYLON.Mesh.CreateBox('AIPiece', pieceSize, scene);
         piece.material = AIPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
         piece.position.z = boardRadius/2; // Interpolate board size by number of pieces
@@ -115,12 +115,16 @@
     let planarCursor = BABYLON.MeshBuilder.CreatePlane("planarCursor", scene);
     planarCursor.material = planarCursorMat;
     planarCursor.rotation.x = Math.PI/2;
+    planarCursor.isPickable = false;
 
     //////////////////////////////////
     //          GAME BOARD          //
     //////////////////////////////////
 
     let board = BABYLON.MeshBuilder.CreatePlane('board', {size: 2*boardRadius},scene);
+    board.visibility = 0;
+    board.rotation.x = Math.PI/2;
+    board.isPickable = false;
 
     console.log('listening for player-controlled events... ');
     //////////////////////////////////
@@ -215,8 +219,16 @@
     //           MAIN LOOP          //
     //////////////////////////////////
     
-    // scene.registerBeforeRender(function () {
-    // });
+    scene.registerBeforeRender(function () {
+        if(mouseControl) {
+            let ray = scene.createPickingRay(scene.pointerX, scene.pointerY);
+            let boardIntersection = ray.intersectsMesh(board);
+
+            if(boardIntersection.hit) {
+                planarCursor.position = boardIntersection.pickedPoint;
+            }
+        }
+    });
 
     let renderLoop = function () {
         scene.render();
