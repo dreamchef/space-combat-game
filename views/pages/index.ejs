@@ -51,7 +51,7 @@
     skyboxMat.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
     skyboxMat.diffuseColor = new BABYLON.Color3(0, 0, 0);
     skyboxMat.specularColor = new BABYLON.Color3(0, 0, 0);
-    skybox.Mat = skyboxMat;
+    skybox.material = skyboxMat;
 
 
     console.log('creating model materials and textures... ');
@@ -68,14 +68,14 @@
     AIPieceMat.emissiveColor = new BABYLON.Color3(0.86, 0.3, 0);
 
     let planarCursorMat = new BABYLON.StandardMaterial("planarCursorMat", scene);
-    planarCursorMat.emissiveColor = new BABYLON.Color3(0, 1, 0);
+    planarCursorMat.emissiveColor = new BABYLON.Color4(0, 1, 0);
 
     console.log('creating cameras... ');
     //////////////////////////////////
     //      FIRST-PERSON CAMERA     //
     //////////////////////////////////
 
-    let camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, 0, -boardRadius), scene);
+    let camera = new BABYLON.FreeCamera("camera", new BABYLON.Vector3(0, boardRadius/2, -boardRadius), scene);
 
     console.log('spawning gamepieces... ');
     //////////////////////////////////
@@ -85,26 +85,27 @@
     // Player pieces
     let playerPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        playerPieces.push(BABYLON.Mesh.CreateBox("playerPiece", pieceSize, scene));
-        playerPieces[i].Material = playerPieceMat;
-        playerPieces[i].position.y = -2;
-        playerPieces[i].position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
-        playerPieces[i].position.z = -boardRadius/2; // Interpolate board size by number of pieces
-        playerPieces[i].isPickable;
-        playerPieces[i].edgesWidth = 4;
-        playerPieces[i].edgesColor = new BABYLON.Color4(1, 1, 1, 1);
+        let piece = BABYLON.Mesh.CreateBox(pieceSize, scene);
+        piece.material = playerPieceMat;
+        piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
+        piece.position.z = -boardRadius/2; // Interpolate board size by number of pieces
+        piece.isPickable = true;
+        piece.edgesWidth = 4;
+        piece.edgesColor = new BABYLON.Color4(1, 1, 1, 1);
 
-        console.log('   player gamepiece instance material: ' + playerPieces[i].Material.emissiveColor);
+        playerPieces.push(piece);
+        console.log('   player gamepiece instance material: ' + playerPieces[i].material.emissiveColor);
     }
 
     // AI pieces
     let AIPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        AIPieces.push(BABYLON.Mesh.CreateBox("AIPiece", pieceSize, scene));
-        AIPieces[i].Material = AIPieceMat;
-        AIPieces[i].position.y = -2;
-        AIPieces[i].position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
-        AIPieces[i].position.z = boardRadius/2; // Interpolate board size by number of pieces
+        let piece = BABYLON.Mesh.CreateBox(pieceSize, scene);
+        piece.material = AIPieceMat;
+        piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
+        piece.position.z = boardRadius/2; // Interpolate board size by number of pieces
+
+        AIPieces.push(piece);
     }
 
     console.log('creating planar cursor... ');
@@ -112,8 +113,15 @@
     //  PLANAR CURSOR (COMMANDS)    //
     //////////////////////////////////
 
-    //let planarCursor = BABYLON.MeshBuilder.CreatePlane("planarCursor", scene);
-    //planarCursor.Material = planarCursorMat;
+    let planarCursor = BABYLON.MeshBuilder.CreatePlane("planarCursor", scene);
+    planarCursor.material = planarCursorMat;
+    planarCursor.rotation.x = Math.PI/2;
+
+    //////////////////////////////////
+    //          GAME BOARD          //
+    //////////////////////////////////
+
+    let board = BABYLON.MeshBuilder.CreatePlane('board', {size: 2*boardRadius},scene);
 
     console.log('listening for player-controlled events... ');
     //////////////////////////////////
@@ -158,12 +166,22 @@
         else if(key.code == 'Escape') {
             mouseControl = false;
         }
-        // Move selected gamepieces
+        // Update move targets of selected gamepieces
         else if(key.code == 'KeyE') {
-            // TODO
+            let moveTarget = scene.pick(scene.pointerX, scene.pointerY);
+            if (moveTarget.pickedMesh.name == 'board') {
+                // TODO: move selected pieces to target
+                for(let i = 0; i < numPieces; i++) {
+                    //playerPieces
+                }
+            }
+            else if (moveTarget.pickedMesh.name == 'AIPiece') {
+                // TODO: attack
+            }
         }
     }
 
+    scene.activeCamera.rotation.x = Math.PI/6;
     function orientCam(event) {
         // Set look direction based on cursor position
         if(mouseControl) {
@@ -195,9 +213,12 @@
 
     console.log('starting render loop... ');
     //////////////////////////////////
-    //           RENDER LOOP        //
+    //           MAIN LOOP          //
     //////////////////////////////////
     
+    // scene.registerBeforeRender(function () {
+    // });
+
     let renderLoop = function () {
         scene.render();
     };
