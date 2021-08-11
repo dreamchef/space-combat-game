@@ -22,6 +22,8 @@
     let numPieces = 5;
     let boardRadius = 15;
     let pieceSize = 1;
+    let pieceSpeed = 1;
+    let moveTargetError = 1;
 
 
     //////////////////////////////////
@@ -193,9 +195,11 @@
             // let boardIntersection = ray.intersectsMesh(board);
             if(mainRay.hit) {
                 if(mainRay.pickedMesh.name == 'AIPiece') {
+                    console.log('attacking AI piece');
                     // TODO: attack pickedMesh piece
                 }
                 else {
+                    console.log('setting move targets');
                     let boardRay = scene.createPickingRay(scene.pointerX, scene.pointerY);
                     let boardIntersection = boardRay.intersectsMesh(board);
                     if(boardIntersection.hit) {
@@ -203,6 +207,7 @@
                             if (playerPieces[i].metadata.selected = true) {
                                 playerPieces[i].metadata.moving = true;
                                 playerPieces[i].metadata.target = boardIntersection.pickedPoint;
+                                console.log(playerPieces[i].metadata.target);
                             }
                         }
                     }
@@ -247,12 +252,25 @@
     //////////////////////////////////
     
     scene.registerBeforeRender(function () {
+        // Place planar cursor under mouse pointer
         if(mouseControl) {
             let ray = scene.createPickingRay(scene.pointerX, scene.pointerY);
             let boardIntersection = ray.intersectsMesh(board);
 
             if(boardIntersection.hit) {
                 planarCursor.position = boardIntersection.pickedPoint;
+            }
+        }
+
+        // Move pieces to their targets
+        let toTarget;
+        for(let i = 0; i < numPieces; i++) {
+            if(playerPieces[i].selected == true && playerPieces[i].moving == true) {
+                console.log('moving piece');
+                toTarget = playerPieces[i].position - playerPieces[i].metadata.target;  
+                if(Math.abs(toTarget.length) > moveTargetError) {
+                    playerPieces[i].position += toTarget.normalize()*pieceSpeed*scene.getEngine().getDeltaTime();
+                }   
             }
         }
     });
