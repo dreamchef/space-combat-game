@@ -62,13 +62,11 @@
     let playerPieceMat = new BABYLON.StandardMaterial("playerPieceMat", scene);
     playerPieceMat.emissiveColor = new BABYLON.Color3(0, 0.58, 0.86);
 
-    console.log('   player piece material: ' + playerPieceMat.emissiveColor);
-
     let AIPieceMat = new BABYLON.StandardMaterial("AIPieceMat", scene);
     AIPieceMat.emissiveColor = new BABYLON.Color3(0.86, 0.3, 0);
 
     let planarCursorMat = new BABYLON.StandardMaterial("planarCursorMat", scene);
-    planarCursorMat.emissiveColor = new BABYLON.Color4(0, 1, 0);
+    planarCursorMat.emissiveColor = new BABYLON.Color3(0, 1, 0);
 
     console.log('creating cameras... ');
     //////////////////////////////////
@@ -85,7 +83,7 @@
     // Player pieces
     let playerPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        let piece = BABYLON.Mesh.CreateBox(pieceSize, scene);
+        let piece = BABYLON.Mesh.CreateBox('mesh', pieceSize, scene);
         piece.material = playerPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
         piece.position.z = -boardRadius/2; // Interpolate board size by number of pieces
@@ -94,18 +92,19 @@
         piece.edgesColor = new BABYLON.Color4(1, 1, 1, 1);
 
         playerPieces.push(piece);
-        console.log('   player gamepiece instance material: ' + playerPieces[i].material.emissiveColor);
+        console.log('   player gamepiece instance material: ' + piece.material.emissiveColor);
     }
 
     // AI pieces
     let AIPieces = [];
     for(let i = 0; i < numPieces; i++) {
-        let piece = BABYLON.Mesh.CreateBox(pieceSize, scene);
+        let piece = BABYLON.Mesh.CreateBox('mesh', pieceSize, scene);
         piece.material = AIPieceMat;
         piece.position.x = (i/(numPieces-1))*boardRadius*2 - boardRadius; // Interpolate board size by number of pieces
         piece.position.z = boardRadius/2; // Interpolate board size by number of pieces
 
         AIPieces.push(piece);
+        console.log('   AI gamepiece instance pos: ' + AIPieces[i].position);
     }
 
     console.log('creating planar cursor... ');
