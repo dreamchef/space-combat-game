@@ -22,7 +22,7 @@
     let numPieces = 5;
     let boardRadius = 15;
     let pieceSize = 1;
-    let pieceSpeed = 1;
+    let pieceSpeed = 0.2;
     let moveTargetError = 1;
 
     //////////////////////////////////
@@ -31,6 +31,7 @@
 
     let groupSelect = false;
     let mouseControl = false;
+    let numSelected = 0;
 
 
     console.log('creating scene, skybox, and lights... ');
@@ -202,17 +203,36 @@
                     let boardRay = scene.createPickingRay(scene.pointerX, scene.pointerY);
                     let boardIntersection = boardRay.intersectsMesh(board);
                     if(boardIntersection.hit) {
+                        // Prepare to targets based on number of ships selected
+                        let selectedPieceIndex = 0;
+                        let firstOffsetLength = numPieces*pieceSize/2;
+                        let secondOffsetLength = 0;
+                        let toTarget, targetNorm, tempX, toTargetOrtho, firstOffset, secondOffset;
+
                         for(let i = 0; i < numPieces; i++) {
                             if (playerPieces[i].metadata.selected == true) {
+                                
                                 playerPieces[i].metadata.moving = true;
-                                playerPieces[i].metadata.target = boardIntersection.pickedPoint;
-                                console.log("GAMEPIECE ", i);
-                                console.log("selected: ",playerPieces[i].metadata.selected);
-                                console.log("moving: ",playerPieces[i].metadata.moving);
-                                console.log("target: ",playerPieces[i].metadata.target);
+                                toTarget = playerPieces[i].position.subtract(boardIntersection.pickedPoint);
+
+                                // Normalizes 90-degree transforms about the y-axis
+                                toTargetOrtho = toTarget.normalize();
+                                toTargetOrtho.x = -(toTargetOrtho.x);
+                                tempX = toTargetOrtho.x; // to swap x and z
+                                toTargetOrtho.x = toTargetOrtho.y;
+                                toTargetOrtho.y = tempX;
+
+                                firstOffset = toTargetOrtho.scale(firstOffSetLength);
+                                secondOffset = toTargetOrtho.scale(-1);
+                                secondOffset.scaleInPlace(pieceSize*selectedPieceIndex)
+
+                                adjustedTarget = boardIntersection.pickedPoint.substract(firstOffset);
+                                adjustedTarget.addInPlace(secondOffset);
+
+                                playerPieces[i].metadata.target = adjustedTarget
+                                
+                                secondOffsetLength += pieceSize;
                             }
-                            console.log(playerPieces[i].metadata.target);
-                            console.log(playerPieces[i].metadata.moving);
                         }
                     }
                 }
@@ -241,11 +261,13 @@
                 for(let i = 0; i < numPieces; i++) {
                         playerPieces[i].metadata.selected = false;
                         playerPieces[i].enableEdgesRendering(0);
+                        numSelected = 0;
                 }
             }
             if(pickResult.pickedMesh.name == 'playerPiece') {
                 pickResult.pickedMesh.metadata.selected = true;
                 pickResult.pickedMesh.enableEdgesRendering();
+                numSelected++;
             }
         }
     };
@@ -257,26 +279,21 @@
     
     scene.registerBeforeRender(function () {
         // Place planar cursor under mouse pointer
-        if(mouseControl) {
-            let ray = scene.createPickingRay(scene.pointerX, scene.pointerY);
-            let boardIntersection = ray.intersectsMesh(board);
+        let ray = scene.createPickingRay(scene.pointerX, scene.pointerY);
+        let boardIntersection = ray.intersectsMesh(board);
 
-            if(boardIntersection.hit) {
-                planarCursor.position = boardIntersection.pickedPoint;
-            }
+        if(boardIntersection.hit) {
+            planarCursor.position = boardIntersection.pickedPoint;
         }
         // Move pieces to their targets
-        let toTarget;
+        let toTarget, adjustedTarget;
         for(let i = 0; i < numPieces; i++) {
             //console.log(playerPieces[i].position);
             if(playerPieces[i].metadata.selected == true && playerPieces[i].metadata.moving == true) {
                 toTarget = playerPieces[i].position.subtract(playerPieces[i].metadata.target);
-                //console.log((Math.pow(toTarget.x,2) + Math.pow(toTarget.y,2) + Math.pow(toTarget.z,2)));
-                //console.log('dir unit vec:', toTarget.length())
                 if(Math.abs(toTarget.length()) > moveTargetError) {  
                     toTarget.normalize();
                     toTarget.scaleInPlace(pieceSpeed);
-                    //toTarget.scaleInPlace(engine.getDeltaTime());
                     playerPieces[i].position.subtractInPlace(toTarget);
                 }   
             }
