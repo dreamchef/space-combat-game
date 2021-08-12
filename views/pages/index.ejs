@@ -22,8 +22,9 @@
     let numPieces = 5;
     let boardRadius = 15;
     let pieceSize = 1;
+    let pieceSpacing = 2;
     let pieceSpeed = 0.2;
-    let moveTargetError = 1;
+    let moveTargetError = 0.1;
 
     //////////////////////////////////
     //     GAME-STATE VARIABLES     //
@@ -204,34 +205,43 @@
                     let boardIntersection = boardRay.intersectsMesh(board);
                     if(boardIntersection.hit) {
                         // Prepare to targets based on number of ships selected
-                        let selectedPieceIndex = 0;
-                        let firstOffsetLength = numPieces*pieceSize/2;
-                        let secondOffsetLength = 0;
-                        let toTarget, targetNorm, tempX, toTargetOrtho, firstOffset, secondOffset;
-
+                        let selectedPieceIndex = 0; // I don't know why, but it works
                         for(let i = 0; i < numPieces; i++) {
                             if (playerPieces[i].metadata.selected == true) {
                                 
+                                console.log('SELECTED PIECE',selectedPieceIndex);
+                                
                                 playerPieces[i].metadata.moving = true;
-                                toTarget = playerPieces[i].position.subtract(boardIntersection.pickedPoint);
+                                
+                                let toTarget = playerPieces[i].position.subtract(boardIntersection.pickedPoint);
+                                
+                                console.log('vector to target',toTarget);
+
 
                                 // Normalizes 90-degree transforms about the y-axis
-                                toTargetOrtho = toTarget.normalize();
+                                let toTargetOrtho = toTarget.normalize();
                                 toTargetOrtho.x = -(toTargetOrtho.x);
-                                tempX = toTargetOrtho.x; // to swap x and z
-                                toTargetOrtho.x = toTargetOrtho.y;
-                                toTargetOrtho.y = tempX;
+                                let tempX = toTargetOrtho.x; // to swap x and z
+                                toTargetOrtho.x = toTargetOrtho.z;
+                                toTargetOrtho.z = tempX;
 
-                                firstOffset = toTargetOrtho.scale(firstOffSetLength);
-                                secondOffset = toTargetOrtho.scale(-1);
-                                secondOffset.scaleInPlace(pieceSize*selectedPieceIndex)
+                                console.log('piece array axis',toTargetOrtho);
 
-                                adjustedTarget = boardIntersection.pickedPoint.substract(firstOffset);
+                                let firstOffset = toTargetOrtho.scale((numSelected-1)*pieceSpacing/2);
+                                let secondOffset = toTargetOrtho.scale(pieceSpacing*selectedPieceIndex);
+
+                                console.log('offset vectors',firstOffset,'then',secondOffset);
+
+                                console.log('picked point',boardIntersection.pickedPoint);
+
+                                adjustedTarget = boardIntersection.pickedPoint.subtract(firstOffset);
                                 adjustedTarget.addInPlace(secondOffset);
+
+                                console.log('adjusted',boardIntersection.pickedPoint,'to',adjustedTarget);
 
                                 playerPieces[i].metadata.target = adjustedTarget
                                 
-                                secondOffsetLength += pieceSize;
+                                selectedPieceIndex++;
                             }
                         }
                     }
