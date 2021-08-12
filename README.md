@@ -10,11 +10,15 @@ First-person shooter, real-time strategy hybrid set in a three-dimensional battl
 
 
 # Current Features
-- Oversee your fleet first-person from the command ship
-- Select ship gamepieces and issue movement orders through a three-dimensional battlefield
-- Monitor ships' health and ammunition levels
+- Oversee your fleet
+- Select ship gamepieces and issue movement orders through battlefield
 
 # Planned features
+- Issue attack orders
 - Enemy AI fleet that pursues and deals damage to your ships
 - Issue attack commands to your ships
 - Destruction or your or the AI's command ship, ending game
+- Three-dimensional battlefield
+- Monitor ships' health and ammunition levels
+- Move around command ship
+- Pilot command ship
