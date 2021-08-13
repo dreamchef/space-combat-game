@@ -9,6 +9,7 @@
 </head>
 <body>
 <script src="libraries/babylon.max.js"></script>
+<script src="libraries/babylon.gui.js"></script>
 <script src="libraries/babylon.objFileLoader.js"></script>
 <canvas id="render-canvas"></canvas>
 <script>
@@ -26,6 +27,7 @@
     let pieceSpeed = 0.2;
     let moveTargetError = 0.1;
     let pieceFireRadius = 5;
+    let pieceGUISize = 0.5;
 
     //////////////////////////////////
     //     GAME-STATE VARIABLES     //
@@ -73,6 +75,16 @@
     planarCursorMat.emissiveColor = new BABYLON.Color3(0, 1, 0);
 
     console.log('creating cameras... ');
+
+
+    //////////////////////////////////
+    //        HEADS-UP DISPLAY      //
+    //////////////////////////////////
+    let hud = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI('hud');
+    hud.isForeground = true;
+    hud.billBoardMode = true;
+
+
     //////////////////////////////////
     //      FIRST-PERSON CAMERA     //
     //////////////////////////////////
@@ -86,6 +98,8 @@
 
     // Player pieces
     let playerPieces = [];
+    let playerPieceHealthBars = [];
+    let playerPieceHealthBarSliders = [];
     for(let i = 0; i < numPieces; i++) {
 
         // Mesh location, size, and appearance
@@ -106,8 +120,26 @@
             selected: false
         }
 
+        // Healthbar
+        healthBar = new BABYLON.GUI.Rectangle();
+        healthBar.heightInPixels = 10;
+        healthBar.widthInPixels = 100;
+        playerPieceHealthBars.push(healthBar);
+        hud.addControl(playerPieceHealthBars[i]);
+        healthBar.linkWithMesh(piece);
+        healthBar.linkOffsetYInPixels = -20;
+        healthBar.background = 'red';
+
+        healthBarGreen = new BABYLON.GUI.Rectangle();
+        healthBarGreen.heightInPixels = 10;
+        healthBarGreen.widthInPixels = 100;
+        healthBarGreen.background = 'green';
+        playerPieceHealthBarSliders.push(healthBarGreen)
+
+        healthBar.addControl(playerPieceHealthBarSliders[i]);
+        console.log(healthBar.children);
+
         playerPieces.push(piece);
-        console.log('   player gamepiece instance material: ' + piece.material.emissiveColor);
     }
 
     // AI pieces
@@ -127,7 +159,6 @@
         }
 
         AIPieces.push(piece);
-        console.log('   AI gamepiece instance pos: ' + AIPieces[i].position);
     }
 
     console.log('creating planar cursor... ');
@@ -303,6 +334,23 @@
         if(boardIntersection.hit) {
             planarCursor.position = boardIntersection.pickedPoint;
         }
+
+        // // Draws red lines between pieces in conflict
+        // let screenSpacePlayer = BABYLON.Vector3.Project(playerPieces[i].position,
+        //     BABYLON.Matrix.Identity(),
+        //     scene.getTransformMatrix(),
+        //     camera.viewport.toGlobal(
+        //     engine.getRenderWidth(),
+        //     engine.getRenderHeight(),
+        //     ));
+        // let screenSpacePlayer = BABYLON.Vector3.Project(playerPieces[i].position,
+        //     BABYLON.Matrix.Identity(),
+        //     scene.getTransformMatrix(),
+        //     camera.viewport.toGlobal(
+        //     engine.getRenderWidth(),
+        //     engine.getRenderHeight(),
+        //     ));
+
 
         // Performs spatial transformations on player gamepieces
         let toTarget, adjustedTarget;
