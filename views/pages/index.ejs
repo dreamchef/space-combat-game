@@ -25,6 +25,7 @@
     let pieceSpacing = 2;
     let pieceSpeed = 0.2;
     let moveTargetError = 0.1;
+    let pieceFireRadius = 5;
 
     //////////////////////////////////
     //     GAME-STATE VARIABLES     //
@@ -100,6 +101,7 @@
         piece.metadata = {
             health: 1,
             moving: false,
+	    attacking: false,
             target: null,
             selected: false
         }
@@ -120,7 +122,8 @@
         piece.metadata = {
             health: 1,
             moving: false,
-            target: null
+            target: null,
+	    id: i
         }
 
         AIPieces.push(piece);
@@ -196,11 +199,15 @@
             // let boardIntersection = ray.intersectsMesh(board);
             if(mainRay.hit) {
                 if(mainRay.pickedMesh.name == 'AIPiece') {
-                    console.log('attacking AI piece');
-                    // TODO: attack pickedMesh piece
+		    console.log('enemy targeted');
+                    for(let i = 0; i < numPieces; i++) {
+		        if(playerPieces[i].metadata.selected == true) {
+			    playerPieces[i].metadata.target = mainRay.pickedMesh.metadata.id;
+			    playerPieces[i].metadata.attacking = true;
+			}
+		    }
                 }
                 else {
-                    console.log('setting move targets');
                     let boardRay = scene.createPickingRay(scene.pointerX, scene.pointerY);
                     let boardIntersection = boardRay.intersectsMesh(board);
                     if(boardIntersection.hit) {
@@ -225,19 +232,19 @@
                                 toTargetOrtho.x = toTargetOrtho.z;
                                 toTargetOrtho.z = tempX;
 
-                                console.log('piece array axis',toTargetOrtho);
+                                //console.log('piece array axis',toTargetOrtho);
 
                                 let firstOffset = toTargetOrtho.scale((numSelected-1)*pieceSpacing/2);
                                 let secondOffset = toTargetOrtho.scale(pieceSpacing*selectedPieceIndex);
 
-                                console.log('offset vectors',firstOffset,'then',secondOffset);
+                                //console.log('offset vectors',firstOffset,'then',secondOffset);
 
-                                console.log('picked point',boardIntersection.pickedPoint);
+                                //console.log('picked point',boardIntersection.pickedPoint);
 
                                 adjustedTarget = boardIntersection.pickedPoint.subtract(firstOffset);
                                 adjustedTarget.addInPlace(secondOffset);
 
-                                console.log('adjusted',boardIntersection.pickedPoint,'to',adjustedTarget);
+                                //console.log('adjusted',boardIntersection.pickedPoint,'to',adjustedTarget);
 
                                 playerPieces[i].metadata.target = adjustedTarget
                                 
@@ -298,14 +305,32 @@
         // Move pieces to their targets
         let toTarget, adjustedTarget;
         for(let i = 0; i < numPieces; i++) {
-            //console.log(playerPieces[i].position);
-            if(playerPieces[i].metadata.selected == true && playerPieces[i].metadata.moving == true) {
-                toTarget = playerPieces[i].position.subtract(playerPieces[i].metadata.target);
-                if(Math.abs(toTarget.length()) > moveTargetError) {  
-                    toTarget.normalize();
-                    toTarget.scaleInPlace(pieceSpeed);
-                    playerPieces[i].position.subtractInPlace(toTarget);
-                }   
+            if(playerPieces[i].metadata.selected) {
+		console.log(playerPieces[i].metadata);
+		if(playerPieces[i].metadata.moving == true && playerPieces[i].metadata.attacking == false) {
+		    console.log('moving piece');
+                    toTarget = playerPieces[i].position.subtract(playerPieces[i].metadata.target);
+                    if(Math.abs(toTarget.length()) > moveTargetError) {  
+                        toTarget.normalize();
+                        toTarget.scaleInPlace(pieceSpeed);
+                        playerPieces[i].position.subtractInPlace(toTarget);
+                    }
+		    else {
+			playerPieces[i].metadata.moving = false;
+		    }
+		}
+		else if(playerPieces[i].metadata.attacking == true) {
+		    toTarget = playerPieces[i].position.subtract(AIPieces[playerPieces[i].metadata.target].position);
+		    //if(AIPieces[playerPieces[i].metadata.target].metadata.health > 0) {
+		        if(Math.abs(toTarget.length()) > pieceFireRadius) {  
+                            toTarget.normalize();
+                            toTarget.scaleInPlace(pieceSpeed);
+                            playerPieces[i].position.subtractInPlace(toTarget);
+                        }
+		        else {
+			    playerPieces[i].metadata.attacking = false;// TODO implement health
+		        }
+		}   
             }
         }
     });
