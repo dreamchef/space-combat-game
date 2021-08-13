@@ -289,50 +289,68 @@
         }
     };
 
+
     console.log('starting render loop... ');
     //////////////////////////////////
-    //           MAIN LOOP          //
+    //      PER-FRAME OPERATIONS    //
     //////////////////////////////////
     
     scene.registerBeforeRender(function () {
-        // Place planar cursor under mouse pointer
+        
+        // Places planar cursor under mouse pointer
         let ray = scene.createPickingRay(scene.pointerX, scene.pointerY);
         let boardIntersection = ray.intersectsMesh(board);
-
         if(boardIntersection.hit) {
             planarCursor.position = boardIntersection.pickedPoint;
         }
-        // Move pieces to their targets
+
+        // Performs spatial transformations on player gamepieces
         let toTarget, adjustedTarget;
         for(let i = 0; i < numPieces; i++) {
             if(playerPieces[i].metadata.selected) {
-		console.log(playerPieces[i].metadata);
-		if(playerPieces[i].metadata.moving == true && playerPieces[i].metadata.attacking == false) {
-		    console.log('moving piece');
+
+                // If piece is move but not attacking, move toward target
+                if(playerPieces[i].metadata.moving == true && playerPieces[i].metadata.attacking == false) {
+                    console.log('moving piece');
                     toTarget = playerPieces[i].position.subtract(playerPieces[i].metadata.target);
                     if(Math.abs(toTarget.length()) > moveTargetError) {  
                         toTarget.normalize();
                         toTarget.scaleInPlace(pieceSpeed);
                         playerPieces[i].position.subtractInPlace(toTarget);
                     }
-		    else {
-			playerPieces[i].metadata.moving = false;
-		    }
-		}
-		else if(playerPieces[i].metadata.attacking == true) {
-		    toTarget = playerPieces[i].position.subtract(AIPieces[playerPieces[i].metadata.target].position);
-		    //if(AIPieces[playerPieces[i].metadata.target].metadata.health > 0) {
-		        if(Math.abs(toTarget.length()) > pieceFireRadius) {  
-                            toTarget.normalize();
-                            toTarget.scaleInPlace(pieceSpeed);
-                            playerPieces[i].position.subtractInPlace(toTarget);
-                        }
-		        else {
-			    playerPieces[i].metadata.attacking = false;// TODO implement health
+                    else {
+                    playerPieces[i].metadata.moving = false;
+                    }
 		        }
-		}   
+
+                // Else if piece is attacking, move toward target radius
+                else if(playerPieces[i].metadata.attacking == true) {
+                    toTarget = playerPieces[i].position.subtract(AIPieces[playerPieces[i].metadata.target].position);
+                    if(Math.abs(toTarget.length()) > pieceFireRadius) {  
+                        toTarget.normalize();
+                        toTarget.scaleInPlace(pieceSpeed);
+                        playerPieces[i].position.subtractInPlace(toTarget);
+                    }
+                    else {
+                    playerPieces[i].metadata.attacking = false;// TODO implement health
+                    }
+                }   
+
+                // If piece is colliding with another object, move away
+                for(let j = 0; j < numPieces; j++) {
+                    if(i != j && playerPieces[i].intersectsMesh(playerPieces[j], false)) {
+                        let fromCollided = playerPieces[i].position.subtract(playerPieces[j].position);
+                        fromCollided.normalize();
+                        fromCollided.scaleInPlace(pieceSpeed);
+                        playerPieces[i].position.addInPlace(fromCollided);
+                    }
+                }
             }
         }
+
+        // Detect intersections and move away from intersected object
+
+
     });
 
     let renderLoop = function () {
