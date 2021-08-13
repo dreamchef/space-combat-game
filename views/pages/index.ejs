@@ -137,13 +137,14 @@
         playerPieceHealthBarSliders.push(healthBarGreen)
 
         healthBar.addControl(playerPieceHealthBarSliders[i]);
-        console.log(healthBar.children);
 
         playerPieces.push(piece);
     }
 
     // AI pieces
     let AIPieces = [];
+    let AIPieceHealthBars = [];
+    let AIPieceHealthBarSliders = [];
     for(let i = 0; i < numPieces; i++) {
         let piece = BABYLON.Mesh.CreateBox('AIPiece', pieceSize, scene);
         piece.material = AIPieceMat;
@@ -155,8 +156,26 @@
             health: 1,
             moving: false,
             target: null,
-	    id: i
+	        id: i
         }
+
+        // Healthbar
+        healthBar = new BABYLON.GUI.Rectangle();
+        healthBar.heightInPixels = 10;
+        healthBar.widthInPixels = 100;
+        AIPieceHealthBars.push(healthBar);
+        hud.addControl(AIPieceHealthBars[i]);
+        healthBar.linkWithMesh(piece);
+        healthBar.linkOffsetYInPixels = -20;
+        healthBar.background = 'red';
+
+        healthBarGreen = new BABYLON.GUI.Rectangle();
+        healthBarGreen.heightInPixels = 10;
+        healthBarGreen.widthInPixels = 100;
+        healthBarGreen.background = 'green';
+        AIPieceHealthBarSliders.push(healthBarGreen)
+
+        healthBar.addControl(AIPieceHealthBarSliders[i]);
 
         AIPieces.push(piece);
     }
@@ -170,6 +189,7 @@
     planarCursor.material = planarCursorMat;
     planarCursor.rotation.x = Math.PI/2;
     planarCursor.isPickable = false;
+
 
     //////////////////////////////////
     //          GAME BOARD          //
